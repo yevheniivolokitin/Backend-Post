@@ -2,6 +2,7 @@ const express = require("express");
 const mysql = require("mysql");
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
+const authenticateToken = require("./authMiddleware"); // Убедитесь, что authMiddleware правильно импортирован
 
 const app = express();
 app.use(cors());
@@ -38,7 +39,7 @@ db.connect((err) => {
    });
 });
 
-app.post("/create", (req, res) => {
+app.post("/create", authenticateToken, (req, res) => {
    const { title, content, image_url, username } = req.body;
    const sql =
       "INSERT INTO Posts (`title`, `content`, `image_url`,`username`) VALUES (?, ?, ?, ?)";
@@ -56,8 +57,8 @@ app.post("/create", (req, res) => {
       }
    });
 });
-// Добавляем маршрут для получения всех постов
-app.get("/main", (req, res) => {
+
+app.get("/main", authenticateToken, (req, res) => {
    const sql = "SELECT * FROM Posts";
 
    db.query(sql, (err, results) => {
@@ -73,15 +74,16 @@ app.get("/main", (req, res) => {
 });
 
 app.post("/signup", (req, res) => {
-   const sql = "INSERT INTO login(`name`,`email`,`password`) VALUES (?)";
-   const values = [req.body.name, req.body.email, req.body.password];
-   db.query(sql, [values], (err, data) => {
+   const sql = "INSERT INTO login SET ?";
+   const values = req.body; // Отправьте объект, а не массив
+   db.query(sql, values, (err, data) => {
       if (err) {
          return res.json("Error");
       }
       return res.json(data);
    });
 });
+
 app.post("/login", (req, res) => {
    const { email, password } = req.body;
    const sql = "SELECT * FROM login WHERE `email` = ? AND `password` = ?";
@@ -102,6 +104,7 @@ app.post("/login", (req, res) => {
       }
    });
 });
+
 app.listen(8081, () => {
    console.log("listening");
 });
