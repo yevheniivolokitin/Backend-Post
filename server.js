@@ -18,25 +18,8 @@ db.connect((err) => {
    if (err) {
       throw err;
    }
-   console.log("Connected to database");
 
-   const createPostsTable = `
-      CREATE TABLE IF NOT EXISTS Posts (
-         id INT AUTO_INCREMENT PRIMARY KEY,
-         title VARCHAR(255),
-         content TEXT,
-         image_url VARCHAR(255),
-         username VARCHAR(255),
-         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-   `;
-
-   db.query(createPostsTable, (err, result) => {
-      if (err) {
-         throw err;
-      }
-      console.log("Posts table created successfully");
-   });
+   console.log("Connected ");
 });
 
 app.post("/create", authenticateToken, (req, res) => {
@@ -74,13 +57,27 @@ app.get("/main", authenticateToken, (req, res) => {
 });
 
 app.post("/signup", (req, res) => {
-   const sql = "INSERT INTO login SET ?";
-   const values = req.body; // Отправьте объект, а не массив
-   db.query(sql, values, (err, data) => {
+   const { user_id, name, email, password } = req.body;
+   const loginSql =
+      "INSERT INTO login (`user_id`, `name`, `email`, `password`) VALUES (?, ?, ?, ?)";
+   const profilesSql =
+      "INSERT INTO Profiles (`user_id`, `name`, `email`) VALUES (?, ?, ?)";
+
+   const loginValues = [user_id, name, email, password];
+   const profilesValues = [user_id, name, email];
+
+   db.query(loginSql, loginValues, (err, data) => {
       if (err) {
+         console.error("Error adding user to login table: ", err);
          return res.json("Error");
       }
-      return res.json(data);
+      db.query(profilesSql, profilesValues, (err, data) => {
+         if (err) {
+            console.error("Error adding user to Profiles table: ", err);
+            return res.json("Error");
+         }
+         return res.json(data);
+      });
    });
 });
 
@@ -106,5 +103,5 @@ app.post("/login", (req, res) => {
 });
 
 app.listen(8081, () => {
-   console.log("listening");
+   console.log("Connected to database");
 });
